@@ -2,16 +2,26 @@ node {
    stage('Get Source') {
       // copy source code from local file system and test
       // for a Dockerfile to build the Docker image
-      git ('https://github.com/upasana-mittal/flask-dockerized-jenkins.git')
-      if (!fileExists("Dockerfile")) {
+      deleteDir()
+      sh "cp -rf /home/roundglass/Documents/flask-docker-app flask-app"
+      if (!fileExists("flask-app/Dockerfile")) {
          error('Dockerfile missing.')
+      }
+   }
+   stage('Unit Test') {
+      // run the unit tests
+      dir("flask-app") {
+         sh "virtualenv  venv "
+         sh ". venv/bin/activate"
+         sh "pip install -r requirements.txt"
+         sh "python -m pytest tests/test_app.py"
       }
    }
    stage('Build Docker') {
        // build the docker image from the source code using the BUILD_ID parameter in image name
-         sh "sudo docker build -t flask-app ."
+       dir("flask-app") {
+         sh "ls -la ${pwd()}"
+         sh "sudo docker build -t flaskapp:latest ."
+       }
    }
-   stage("run docker container"){
-        sh "sudo docker run -p 8000:8000 --name flask-app -d flask-app "
-    }
 }
